@@ -3,3 +3,4 @@ lorry-ui/node_modules/
 .env 
 dist/ 
 build/ 
+"node_modules/" 
