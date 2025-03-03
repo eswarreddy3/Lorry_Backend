@@ -10,10 +10,24 @@ app.use(cors());
 
 const mongoose = require('mongoose');
 
-mongoose.connect("mongodb://localhost:27017/bookings", { 
+require('dotenv').config();
+
+
+console.log("MONGO_URI:", process.env.MONGO_URI); // Debugging step
+
+if (!process.env.MONGO_URI) {
+    console.error("❌ MONGO_URI is not defined. Check your .env file.");
+    process.exit(1);  // Stop execution
+}
+
+mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
-});
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 30000,
+})
+.then(() => console.log("✅ Connected to MongoDB Atlas"))
+.catch(err => console.error("❌ MongoDB connection error:", err));
+
 
 const personSchema = new mongoose.Schema({
     name: String,
@@ -119,14 +133,30 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 
 async function hashPassword() {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('siva1318', salt);
+    console.log("🔍 Checking if user 'sstls' exists...");
 
-    const result = await User.updateOne({ username: 'sstls' }, { password: hashedPassword });
+    try {
+        const existingUser = await User.findOne({ username: 'sstls' });
+
+        if (!existingUser) {
+            console.log("🚀 Creating a new user...");
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash('siva1318', salt);
+
+            const newUser = new User({ username: 'sstls', password: hashedPassword });
+
+            await newUser.save();
+            console.log("✅ User 'sstls' created successfully.");
+        } else {
+            console.log("⚠️ User already exists. Skipping creation.");
+        }
+    } catch (error) {
+        console.error("❌ Error creating user:", error);
+    }
 }
 
-
 hashPassword();
+
 
 // Register or Create User Endpoint
 app.post('/register', async (req, res) => {
@@ -161,7 +191,9 @@ app.post('/login', async (req, res) => {
 });
 
 
-
+bcrypt.hash('Siva1318', 10, (err, hash) => {
+    // console.log(hash); 
+});
 
 
 
